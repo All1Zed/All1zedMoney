@@ -1,0 +1,25 @@
+fastapi
+uvicorn
+httpx
+python-dotenv
+pydantic
+sqlalchemy
+zeep
+lxml
+zeep
+requests
+python-dotenv
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+# Database
+psycopg2-binary
+alembic
+# Rate limiting and monitoring
+slowapi
+prometheus-client
+# Additional utilities
+redis
+celery
+pydantic-settings 
