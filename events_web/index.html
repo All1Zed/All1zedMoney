@@ -13,11 +13,6 @@
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
         }
-        .hero-section {
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
-            background-size: cover;
-            background-position: center;
-        }
         .event-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
@@ -111,12 +106,13 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="hero-section text-white py-20 md:py-28">
-        <div class="container mx-auto px-4 md:px-8 lg:px-16 xl:px-24 text-center">
-            <h1 class="text-xl sm:text-2xl font-bold text-center text-white-800 mb-4">Discover & Book Amazing Events</h1>
-            <p class="text-md md:text-md mb-8 text-gray-100 max-w-3xl mx-auto">
-                Immerse yourself in a world of excitement and joy! 
-                Whether you're a music enthusiast, a sports fanatic, or someone seeking cultural experiences, we have it all.</p>
+    <section class="max-w-screen-2xl mx-auto px-0 md:px-8 lg:px-16 xl:px-24 text-white text-center">
+        <div class="relative min-h-[60vw] sm:min-h-[350px] flex flex-col justify-center items-center" style="background: linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80'); background-size: cover; background-position: center; padding-top: 3rem; padding-bottom: 3rem;">
+            <h1 class="text-lg sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 drop-shadow-lg">Discover & Book Amazing Events</h1>
+            <p class="text-center text-sm sm:text-base md:text-lg mb-6 sm:mb-8 text-gray-100 max-w-xs sm:max-w-xl mx-auto drop-shadow">
+                Immerse yourself in a world of excitement!<br>
+                Whether you're a music enthusiast, a sports fanatic, or someone seeking cultural experiences, we have it all.
+            </p>
         </div>
     </section>
 
@@ -306,15 +302,17 @@
 
     <script>
         // --- API Calls ---
+        const API_BASE_URL = "http://127.0.0.1:8001";
         const getEventsFromAPI = async (filter = 'all') => {
-            const response = await fetch('/api/web/tickets/', {
+            const response = await fetch(`${API_BASE_URL}/api/web/tickets/`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });
             const data = await response.json();
+            console.log('Fetched events data:', data);
             if (data.status && data.data) {
                 if (filter === 'all') return data.data;
-                return data.data.filter(event => event.type === filter);
+                return data.data.filter(event => event.event_type === filter);
             }
             return [];
         };
@@ -333,7 +331,7 @@
         const closePaymentModalBtn = document.getElementById('close-payment-modal');
         const paymentForm = document.getElementById('payment-form');
         const successMessage = document.getElementById('success-message');
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
         const mobileMenu = document.getElementById('mobile-menu');
         const ticketQuantityInput = document.getElementById('ticket-quantity');
         const seatTypeSelect = document.getElementById('seat-type');
@@ -360,20 +358,38 @@
                 return;
             }
             eventsToShow.forEach(event => {
+                if (!event) return;
+                // Determine the lowest available price
+                let price = null;
+                const priceFields = [
+                    'grand_stand_price',
+                    'open_wing_price',
+                    'vip_red',
+                    'vvip_ticket_price'
+                ];
+                for (const field of priceFields) {
+                    if (typeof event[field] === 'number') {
+                        price = event[field];
+                        break;
+                    }
+                }
+                // Fallback if no price found
+                const priceDisplay = price !== null ? `K${price.toFixed(2)}` : 'N/A';
+                const imageUrl = event.banner_image ? (event.banner_image.startsWith('http') ? event.banner_image : `${API_BASE_URL}${event.banner_image}`) : 'https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';
                 const eventCard = document.createElement('div');
                 eventCard.className = 'event-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer min-w-[80vw] max-w-xs snap-center sm:min-w-0 sm:max-w-none';
                 eventCard.dataset.eventId = event.id;
                 eventCard.innerHTML = `
                     <div class="aspect-w-16 aspect-h-9">
-                        <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+                        <img src="${imageUrl}" alt="${event.event_name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
                     </div>
                     <div class="p-5">
-                        <span class="text-sm font-semibold text-green-500">${event.type.toUpperCase()}</span>
-                        <h3 class="text-base sm:text-lg font-bold text-gray-800 mt-2 mb-2 truncate">${event.title}</h3>
-                        <p class="text-gray-600 mb-4 text-sm truncate"><i class="fas fa-map-marker-alt mr-2"></i>${event.location}</p>
+                        <span class="text-sm font-semibold text-green-500">${(event.event_type || 'Unknown').toUpperCase()}</span>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-800 mt-2 mb-2 truncate">${event.event_name || 'Untitled Event'}</h3>
+                        <p class="text-gray-600 mb-4 text-sm truncate"><i class="fas fa-map-marker-alt mr-2"></i>${event.venue || 'Unknown Venue'}</p>
                         <div class="flex justify-between items-center">
-                            <p class="text-lg font-bold text-gray-900">K${event.price.toFixed(2)}</p>
-                            <span class="text-gray-600 font-medium text-sm"><i class="fas fa-calendar-alt mr-2"></i>${new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                            <p class="text-lg font-bold text-gray-900">${priceDisplay}</p>
+                            <span class="text-gray-600 font-medium text-sm"><i class="fas fa-calendar-alt mr-2"></i>${event.date_starting ? new Date(event.date_starting).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
                         </div>
                     </div>
                 `;
@@ -400,17 +416,17 @@
             modalContent.innerHTML = `
                 <div class="relative">
                     <div class="aspect-w-16 aspect-h-9">
-                         <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover rounded-t-lg" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+                         <img src="${event.banner_image ? (event.banner_image.startsWith('http') ? event.banner_image : `${API_BASE_URL}${event.banner_image}`) : 'https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found'}" alt="${event.event_name}" class="w-full h-full object-cover rounded-t-lg" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
                     </div>
                     <button id="close-modal" class="absolute top-4 right-4 bg-black/50 text-white rounded-full h-8 w-8 flex items-center justify-center hover:bg-black/75 transition text-2xl leading-none">&times;</button>
                 </div>
                 <div class="p-6 sm:p-8">
-                    <span class="text-sm font-semibold text-green-500">${event.type.toUpperCase()}</span>
-                    <h2 class="text-base sm:text-lg font-bold text-gray-800 mt-2 mb-4">${event.title}</h2>
-                    <div class="flex items-center text-gray-600 mb-4"><i class="fas fa-calendar-alt mr-3 w-4 text-center"></i><span>${new Date(event.date).toDateString()}</span></div>
-                    <div class="flex items-center text-gray-600 mb-2"><i class="fas fa-map-marker-alt mr-3 w-4 text-center"></i><span>${event.location}</span></div>
-                    <p class="text-xs sm:text-xl font-bold text-gray-900 mb-4">K${event.price.toFixed(2)} <span class="text-[10px] sm:text-base font-normal text-gray-600">/ ticket</span></p>
-                    <p class="text-gray-700 mb-6">${event.description}</p>
+                    <span class="text-sm font-semibold text-green-500">${(event.event_type || 'Unknown').toUpperCase()}</span>
+                    <h2 class="text-base sm:text-lg font-bold text-gray-800 mt-2 mb-4">${event.event_name || 'Untitled Event'}</h2>
+                    <div class="flex items-center text-gray-600 mb-4"><i class="fas fa-calendar-alt mr-3 w-4 text-center"></i><span>${event.date_starting ? new Date(event.date_starting).toDateString() : ''}</span></div>
+                    <div class="flex items-center text-gray-600 mb-2"><i class="fas fa-map-marker-alt mr-3 w-4 text-center"></i><span>${event.venue || ''}</span></div>
+                    <p class="text-xs sm:text-xl font-bold text-gray-900 mb-4">${typeof event.grand_stand_price === 'number' ? `K${event.grand_stand_price.toFixed(2)}` : ''} <span class="text-[10px] sm:text-base font-normal text-gray-600">/ ticket</span></p>
+                    <p class="text-gray-700 mb-6">${event.description || ''}</p>
                     <div class="w-full h-48 rounded-lg overflow-hidden mb-4">
                       <iframe
                         width="100%"
@@ -419,7 +435,7 @@
                         loading="lazy"
                         allowfullscreen
                         referrerpolicy="no-referrer-when-downgrade"
-                        src="https://www.google.com/maps?q=${encodeURIComponent(event.location)}&output=embed">
+                        src="https://www.google.com/maps?q=${encodeURIComponent(event.venue || '')}&output=embed">
                       </iframe>
                     </div>
                     <div class="flex flex-col sm:flex-row justify-between items-center bg-gray-100 p-4 rounded-lg">
@@ -445,8 +461,12 @@
         const updateTotalPrice = () => {
             if (!activeEvent) return;
             const quantity = parseInt(ticketQuantityInput.value) || 1;
-            const seatMultiplier = parseFloat(seatTypeSelect.value);
-            const totalPrice = activeEvent.price * quantity * seatMultiplier;
+            const seatTypeKey = seatTypeSelect.value;
+            let seatPrice = 0;
+            if (seatTypeKey && typeof activeEvent[seatTypeKey] === 'number') {
+                seatPrice = activeEvent[seatTypeKey];
+            }
+            const totalPrice = seatPrice * quantity;
             totalPriceDisplay.textContent = `K${totalPrice.toFixed(2)}`;
         };
 
@@ -455,7 +475,58 @@
             
             activeEvent = event; 
 
-            document.getElementById('payment-event-title').textContent = activeEvent.title;
+            document.getElementById('payment-event-title').textContent = activeEvent.event_name || 'Untitled Event';
+
+            // Dynamically populate seat types
+            const seatTypeSelect = document.getElementById('seat-type');
+            seatTypeSelect.innerHTML = '';
+            // Map of seat type keys to user-friendly labels
+            const seatTypeMap = {
+                grand_stand_price: 'Grand Stand',
+                open_wing_price: 'Open Wing',
+                vip_red: 'VIP Red',
+                vvip_ticket_price: 'VVIP',
+                general_ticket_price: 'General',
+                children_price: 'Children',
+                lower_east_wing_price: 'Lower East Wing',
+                lower_north_wing_price: 'Lower North Wing',
+                lower_south_wing_price: 'Lower South Wing',
+                lower_west_wing_price: 'Lower West Wing',
+                upper_east_wing_price: 'Upper East Wing',
+                upper_north_wing_price: 'Upper North Wing',
+                upper_south_wing_price: 'Upper South Wing',
+                upper_west_wing_price: 'Upper West Wing',
+                west_wing_blue: 'West Wing Blue',
+                lower_east_blue: 'Lower East Blue',
+                lower_north_orange: 'Lower North Orange',
+                lower_south_orange: 'Lower South Orange',
+                upper_east_blue: 'Upper East Blue',
+                upper_north_orange: 'Upper North Orange',
+                upper_south_orange: 'Upper South Orange',
+                vip_orange: 'VIP Orange',
+            };
+            let firstSeatType = null;
+            for (const [key, label] of Object.entries(seatTypeMap)) {
+                if (typeof activeEvent[key] === 'number' && activeEvent[key] > 0) {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `${label} (K${activeEvent[key].toFixed(2)})`;
+                    seatTypeSelect.appendChild(option);
+                    if (!firstSeatType) firstSeatType = key;
+                }
+            }
+            // If no seat types found, add a disabled option
+            if (!seatTypeSelect.children.length) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No seat types available';
+                option.disabled = true;
+                option.selected = true;
+                seatTypeSelect.appendChild(option);
+            }
+            // Set default selected seat type
+            seatTypeSelect.value = firstSeatType || '';
+
             updateTotalPrice(); 
 
             eventModal.classList.add('hidden');
@@ -485,11 +556,14 @@
                 customer_email: document.getElementById('email-address').value,
                 number_of_tickets: parseInt(document.getElementById('ticket-quantity').value),
                 payment_method: 'momo',
-                seat_type: document.getElementById('seat-type').selectedOptions[0].text.toLowerCase(),
+                seat_type: document.getElementById('seat-type').value,
+                seat_type_label: document.getElementById('seat-type').selectedOptions[0]?.text || '',
+                seat_price: activeEvent[document.getElementById('seat-type').value],
                 event_id: activeEvent.id
             };
+            console.log('Submitting payment form data:', formData);
             try {
-                const response = await fetch('/api/web/tickets/', {
+                const response = await fetch(`${API_BASE_URL}/api/web/tickets/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
@@ -512,7 +586,7 @@
             const maxAttempts = 10;
             const interval = setInterval(async () => {
                 attempts++;
-                const response = await fetch(`/api/web/payments/status/${txnId}/`, {
+                const response = await fetch(`${API_BASE_URL}/api/web/payments/status/${txnId}/`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -568,9 +642,11 @@
         ticketQuantityInput.addEventListener('input', updateTotalPrice);
         seatTypeSelect.addEventListener('change', updateTotalPrice);
 
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
+        if (mobileMenuButton) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
 
     </script>
     <script>

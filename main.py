@@ -20,7 +20,7 @@ logger = logging.getLogger("payment_gateway")
 app = FastAPI(
     title="All1ZED Payment Gateway",
     description="Handles mobile money payments through Konik SOAP gateway with authentication, webhooks, and analytics",
-    version="2.0.0",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -63,7 +63,7 @@ async def health_check():
     health_status = {
         "status": "healthy",
         "timestamp": "2024-01-01T00:00:00Z",
-        "version": "2.0.0",
+        "version": "1.0.0",
         "checks": {
             "database": health_checker.check_database_connection(db),
             "external_services": health_checker.check_external_services(),
@@ -91,7 +91,7 @@ async def root():
     """Root endpoint with API information"""
     return {
         "message": "All1ZED Payment Gateway API",
-        "version": "2.0.0",
+        "version": "1.0.0",
         "docs": "/docs",
         "health": "/health",
         "metrics": "/metrics"
